@@ -5,7 +5,13 @@
     <div class="grid">
       <div class="grid__row">
         <div class="grid__column-2">
-          <Sidebar :types="types" :producers="producers" :ok="ok" />
+          <Sidebar
+            :types="types"
+            :producers="producers"
+            :ok="ok"
+            :type_product="product.type_id"
+            :producer_product="product.producer_id"
+          />
         </div>
         <div class="grid__column-10">
           <div class="main">
@@ -14,14 +20,14 @@
                 <div class="grid__row" style="padding: 12px; min-height: 530px">
                   <div style="width: 100%; margin-left: 30px; margin-right: 30px">
                     <div class="btn-back">
-                      <a class="back-link" @click="$router.go(-1)">
+                      <button type="button" class="back-link" @click="$router.go(-1)">
                         <img
                           class="img-back"
-                          src="http://nccdn-traning-php.test:8080/image/Left_Arrow_2.svg"
+                          :src="`${host}/image/Left_Arrow_2.svg`"
                           alt=""
                         />
                         Quay lại
-                      </a>
+                      </button>
                     </div>
 
                     <div class="info-detail">
@@ -31,27 +37,21 @@
                         </p>
                         <p>Danh mục: {{ product.type_name }}</p>
                         <p>Hãng sản xuất: {{ product.producer_name }}</p>
-                        <p style="margin-bottom: 15px">
-                          Giá:
-                          {{
-                            "$ " +
-                            parseInt(product.price).toLocaleString("en-US", {
-                              currency: "VND",
-                            })
-                          }}
-                        </p>
+                        <p style="margin-bottom: 15px">Giá: $ {{ product.price }}</p>
                         <p>Mô tả sản phẩm:</p>
-                        <p style="height: 264px">{{ product.description }}</p>
+                        <p class="description">
+                          {{ product.description }}
+                        </p>
                       </div>
                       <div class="slide" v-if="Object.keys(slides).length">
                         <div v-for="(slide, index) in slides" :key="slide.id">
                           <img
                             v-show="index === current"
-                            class="image-slide"
-                            :src="`http://nccdn-traning-php.test:8080/image/slide/${slide.product_id}/${slide.image}`"
+                            class="image-slide-edit"
+                            :src="`${host}/image/slide/${slide.product_id}/${slide.image}`"
                           />
                         </div>
-                        <div class="dot-slide">
+                        <div class="dot-slide" :hidden="Object.keys(slides).length <= 1">
                           <span
                             class="dot"
                             :class="index === current ? 'active-slide' : ''"
@@ -63,13 +63,17 @@
                       </div>
                       <div v-else class="slide">
                         <img
-                          class="image-slide"
-                          :src="`http://nccdn-traning-php.test:8080/image/description/${product.id}/${product.image_link}`"
+                          class="image-slide-edit"
+                          :src="`${host}/image/description/${product.id}/${product.image_link}`"
                         />
                       </div>
                     </div>
 
-                    <div class="hint" style="margin-top: 20px">
+                    <div
+                      class="hint"
+                      style="margin-top: 50px"
+                      v-if="Object.keys(relativeProducts).length > 0"
+                    >
                       <p style="font-size: 1.4rem; font-weight: 500">Gợi ý cho bạn:</p>
                       <div style="display: flex; margin-left: -12px; margin-right: -12px">
                         <div
@@ -81,7 +85,7 @@
                             <router-link :to="`/product/detail/${relativeProduct.id}`">
                               <img
                                 class="image-detail"
-                                :src="`http://nccdn-traning-php.test:8080/image/description/${relativeProduct.id}/${relativeProduct.image_link}`"
+                                :src="`${host}/image/description/${relativeProduct.id}/${relativeProduct.image_link}`"
                               />
                             </router-link>
                             <p
@@ -98,7 +102,7 @@
                             >
                               {{
                                 "$ " +
-                                parseInt(product.price).toLocaleString("en-US", {
+                                parseInt(relativeProduct.price).toLocaleString("en-US", {
                                   currency: "VND",
                                 })
                               }}
@@ -116,10 +120,15 @@
       </div>
     </div>
   </div>
+  <Loading :loading="loading" />
 </template>
 
 <script>
+import Loading from "../components/Loading.vue";
 export default {
+  components: {
+    Loading,
+  },
   data() {
     return {
       types: {
@@ -130,12 +139,20 @@ export default {
         id: "",
         name: "",
       },
-      product: {},
+      product: {
+        name: "",
+        type_id: "",
+        producer_id: "",
+        price: "",
+        description: "",
+      },
       slides: [],
       timer: null,
       current: 0,
       relativeProducts: {},
-      ok: false,
+      ok: true,
+      host: window.location.origin,
+      loading: "",
     };
   },
 
@@ -170,23 +187,26 @@ export default {
     },
 
     getProduct(id) {
+      this.loading = true;
       axios
         .get(`/api/products/detail/${id}`)
         .then((response) => {
           this.product = response.data.data;
+          this.product.price = parseInt(this.product.price).toLocaleString("en-US", {
+            currency: "VND",
+          });
+          this.loading = false;
         })
         .catch((error) => {
+          this.loading = false;
           console.log(error);
           this.products = {};
           Swal.fire({
             width: 610,
-            html: `<h3>Không có sản phẩm!</h3>`,
-            imageUrl: `http://nccdn-traning-php.test:8080/image/Delete_file.svg`,
-            imageWidth: 120,
-            imageHeight: 120,
-            imageAlt: "Hình ảnh thùng rác",
-            showCloseButton: true,
-            showConfirmButton: false,
+            icon: "error",
+            title: "Không có sản phẩm",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
           });
           setTimeout(() => {
             this.$router.go(-1);
@@ -211,10 +231,9 @@ export default {
         .get(`/api/slides/${product_id}`)
         .then((response) => {
           this.slides = response.data.data;
-          console.log(this.slides);
         })
         .catch((error) => {
-          console.log(error);
+          this.slides = {};
         });
     },
 
@@ -235,7 +254,6 @@ export default {
   },
 
   mounted() {
-    window.scroll(0, 0);
     this.getSlideByProductId(this.$route.params.id);
     this.getType();
     this.getProducer();
@@ -245,3 +263,17 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.description {
+  overflow: hidden;
+  line-height: 2rem;
+  max-height: 264px;
+  -webkit-box-orient: vertical;
+  display: block;
+  display: -webkit-box;
+  overflow: hidden !important;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 4;
+}
+</style>

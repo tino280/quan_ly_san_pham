@@ -14,7 +14,7 @@
           <div class="modal-header" style="padding: 20px 20px">
             <h5 class="modal-title">THÊM SẢN PHẨM</h5>
             <button
-              type="reset"
+              type="button"
               class="btn-close"
               data-bs-dismiss="modal"
               aria-label="Close"
@@ -24,7 +24,9 @@
           <div class="modal-body" style="margin: 0 20px">
             <div class="container-fluid">
               <div class="row row-name">
-                <div class="col-md-4">Tên sản phẩm<span style="color: red">*</span></div>
+                <div class="col-md-4">
+                  Tên sản phẩm<span style="color: red">* {{ error.name }} </span>
+                </div>
                 <input
                   class="modal-input name"
                   type="text"
@@ -32,32 +34,33 @@
                   placeholder="Nhập tên sản phẩm"
                   v-model="product.name"
                 />
-                <span style="color: red"> {{ error.name }} </span>
               </div>
               <div class="row row-type_id">
                 <div class="col-md-4">
-                  Danh mục sản phẩm<span style="color: red">*</span>
+                  Danh mục sản phẩm<span style="color: red">* {{ error.type_id }} </span>
                 </div>
                 <select
                   class="modal-input type_id"
                   name="type_id"
                   v-model="product.type_id"
+                  @change="handleChange(product.type_id)"
                 >
                   <option value="" selected>Chọn danh mục sản phẩm</option>
                   <option v-for="type in types" :key="type.id" :value="type.id">
                     {{ type.name }}
                   </option>
                 </select>
-                <span style="color: red"> {{ error.type_id }} </span>
               </div>
               <div class="row row-producer_id">
-                <div class="col-md-4">Hãng sản xuất<span style="color: red">*</span></div>
+                <div class="col-md-4">
+                  Hãng sản xuất<span style="color: red">* {{ error.producer_id }} </span>
+                </div>
                 <select
                   class="modal-input producer_id"
                   name="producer_id"
                   v-model="product.producer_id"
                 >
-                  <option value="" selected>Chọn hãng sản xuất</option>
+                  <option value="" :selected="ok">Chọn hãng sản xuất</option>
                   <option
                     v-for="producer in producers"
                     :key="producer.id"
@@ -66,10 +69,11 @@
                     {{ producer.name }}
                   </option>
                 </select>
-                <span style="color: red"> {{ error.producer_id }} </span>
               </div>
               <div class="row row-price">
-                <div class="col-md-4">Giá<span style="color: red">*</span></div>
+                <div class="col-md-4">
+                  Giá<span style="color: red">* {{ error.price }} </span>
+                </div>
                 <input
                   class="modal-input price"
                   type="text"
@@ -77,10 +81,11 @@
                   placeholder="Nhập giá sản phẩm"
                   v-model="product.price"
                 />
-                <span style="color: red"> {{ error.price }} </span>
               </div>
               <div class="row row-description">
-                <div class="col-md-4">Mô tả<span style="color: red">*</span></div>
+                <div class="col-md-4">
+                  Mô tả<span style="color: red">* {{ error.description }} </span>
+                </div>
                 <textarea
                   class="modal-input description"
                   name="description"
@@ -88,18 +93,18 @@
                   style="height: 120px"
                   v-model="product.description"
                 ></textarea>
-                <span style="color: red"> {{ error.description }} </span>
               </div>
-              <div class="row row-image_link">
-                <button
+              <div class="row">
+                <div
                   id="add-image"
                   class="col-md-4 btn-add-image"
-                  type="button"
                   @click="this.$refs.fileInput.click()"
                 >
-                  <span style="margin-left: -27px">Thêm ảnh minh họa</span
-                  ><span style="color: red">*</span>
-                </button>
+                  <span>Thêm ảnh minh họa</span
+                  ><span style="color: red"
+                    >* {{ error.image_link }} {{ error.image }}
+                  </span>
+                </div>
                 <input
                   class="modal-input image_link"
                   type="file"
@@ -108,17 +113,16 @@
                   ref="fileInput"
                   @change="addImage"
                 />
-                <span style="color: red"> {{ error.image_link }} </span>
-                <p>
-                  File:
-                  <span v-if="product.image_link">{{ product.image_link["name"] }}</span>
-                </p>
+              </div>
+              <div class="row" style="margin-bottom: 10px">
+                File:
+                <span v-if="product.image_link"> {{ product.image_link["name"] }}</span>
               </div>
             </div>
           </div>
-          <div class="modal-footer">
+          <div class="modal-footer" style="height: 70px">
             <button
-              type="reset"
+              type="button"
               class="my-btn my-btn-modal-reset"
               data-bs-dismiss="modal"
               @click="resetModal"
@@ -133,15 +137,19 @@
       </div>
     </div>
   </div>
+  <Loading :loading="loading" />
 </template>
 
 <script>
+import Loading from "../../components/Loading.vue";
 export default {
+  components: {
+    Loading,
+  },
+  emits: ["reloadList"],
   props: {
     types: {},
-    producers: {},
   },
-
   data() {
     return {
       product: {
@@ -152,6 +160,7 @@ export default {
         description: "",
         image_link: "",
       },
+      producers: {},
       error: {
         name: "",
         type_id: "",
@@ -159,29 +168,84 @@ export default {
         price: "",
         description: "",
         image_link: "",
+        image: "",
       },
+      ok: true,
+      host: window.location.origin,
+      loading: false,
     };
   },
 
   watch: {
-    product: {
+    "product.name": {
       handler: function () {
-        this.resetError();
+        this.error.name = "";
       },
-      deep: true,
+    },
+    "product.type_id": {
+      handler: function () {
+        this.error.type_id = "";
+      },
+    },
+    "product.producer_id": {
+      handler: function () {
+        this.error.producer_id = "";
+      },
+    },
+    "product.price": {
+      handler: function () {
+        this.error.price = "";
+      },
+    },
+    "product.description": {
+      handler: function () {
+        this.error.description = "";
+      },
+    },
+    "product.image_link": {
+      handler: function () {
+        this.error.image_link = "";
+      },
     },
   },
 
   methods: {
     addImage() {
+      const validImageTypes = ["image/gif", "image/jpeg", "image/png"];
       this.product.image_link = this.$refs.fileInput["files"][0];
       if (!this.product.image_link) {
         this.product.image_link = "";
+        product.image_link["name"] = "";
+        return;
+      }
+      const fileType = this.product.image_link["type"];
+      if (!validImageTypes.includes(fileType)) {
+        this.error.image = "File vừa chọn không phải là ảnh";
+        return;
+      }
+    },
+
+    handleChange(typeId) {
+      if (!typeId) {
+        this.ok = true;
+        this.producers = {};
+      } else {
+        this.product.producer_id = "";
+        axios
+          .get(`/api/producers/types/${typeId}`)
+          .then((response) => {
+            this.producers = response.data.data;
+          })
+          .catch((error) => {
+            console.log(error);
+          });
       }
     },
 
     handelSubmit() {
+      this.loading = true;
       this.resetError();
+      this.error.image = "";
       const formData = new FormData();
       formData.append("name", this.product.name);
       formData.append("type_id", this.product.type_id);
@@ -201,21 +265,26 @@ export default {
           Swal.fire({
             width: 610,
             html: "<h3>Thêm thành công!</h3>",
-            imageUrl: "http://nccdn-traning-php.test:8080/image/present_1.png",
+            imageUrl: `${this.host}/image/present_1.png`,
             imageWidth: 120,
             imageHeight: 120,
             imageAlt: "Hình ảnh hộp quà",
-            showCloseButton: true,
             showConfirmButton: false,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
           });
           this.$emit("reloadList");
-          setTimeout(function () {
-            window.location.href =
-              "http://nccdn-traning-php.test:8080/product/detail/" +
-              response.data.data.id;
+          this.loading = false;
+          setTimeout(() => {
+            window.location.href = `${this.host}/product/detail/${response.data.data.id}`;
           }, 2000);
         })
         .catch((error) => {
+          this.loading = false;
+          Swal.fire({
+            icon: "error",
+            title: "Thêm thất bại!",
+          });
           const messageError = error.response.data.errors;
           Object.entries(messageError).forEach((error) => {
             this.error[error[0]] = error[1][0];
@@ -230,8 +299,6 @@ export default {
 
     resetProduct() {
       this.product.name = "";
-      this.product.type_id = "";
-      this.product.producer_id = "";
       this.product.price = "";
       this.product.description = "";
       this.product.image_link = "";
@@ -244,6 +311,7 @@ export default {
       this.error.price = "";
       this.error.description = "";
       this.error.image_link = "";
+      this.error.image = "";
     },
   },
 };
@@ -252,5 +320,18 @@ export default {
 <style scoped>
 span {
   height: 15px;
+}
+
+.col-md-4 {
+  width: 100%;
+}
+
+.row {
+  display: block;
+}
+
+.my-btn {
+  width: 140px;
+  height: 35px;
 }
 </style>

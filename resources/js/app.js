@@ -2,13 +2,13 @@ import './bootstrap';
 
 import { createApp } from 'vue';
 import router from './routes';
-import ListItem from './components/layouts/ListItem.vue';
-import ListView from './components/layouts/ListView.vue';
-import Header from './components/layouts/header.vue';
-import Sidebar from './components/layouts/Sidebar.vue';
-import ModalCreateProduct from './components/admin/components/ModalCreateProduct.vue';
-import Pagination from './components/layouts/Pagination.vue';
-import App from './components/App.vue';
+import ListItem from './layouts/components/ListItem.vue';
+import ListView from './layouts/components/ListView.vue';
+import Header from './layouts/components/Header.vue';
+import Sidebar from './layouts/components/Sidebar.vue';
+import ModalCreateProduct from './layouts/admin/components/ModalCreateProduct.vue';
+import Pagination from './layouts/components/Pagination.vue';
+import App from './layouts/App.vue';
 
 const app = createApp({});
 

@@ -5,38 +5,23 @@
     <div class="grid">
       <div class="grid__row">
         <div class="grid__column-2">
-          <Sidebar :types="types" :producers="producers" :ok="ok" :checkAdmin="true" />
+          <Sidebar
+            :types="types"
+            :ok="$route.query.producer_id ? true : false"
+            :checkAdmin="false"
+          />
         </div>
         <div class="grid__column-10">
           <div class="main">
             <div class="top-block">
-              <div class="create">
-                <button
-                  type="button"
-                  class="my-btn my-btn-add"
-                  data-bs-toggle="modal"
-                  data-bs-target="#add-product"
-                  data-bs-keyboard="false"
-                >
-                  Thêm sản phẩm
-                </button>
-                <modal-create-product
-                  :types="types"
-                  :producers="producers"
-                  @reload-list="getProduct"
-                />
-              </div>
+              <div class="create"></div>
               <Search />
             </div>
 
             <div class="content">
               <div class="grid">
-                <div class="grid__row" style="padding: 12px; min-height: 530px">
-                  <list-view
-                    :products="products"
-                    :checkAdmin="true"
-                    @reload-list="getProduct"
-                  />
+                <div class="grid__row" style="padding: 12px; min-height: 570px">
+                  <list-view :products="products" :checkAdmin="false" />
 
                   <div v-if="products.length === 0">
                     <h1>Không có sản phẩm</h1>
@@ -62,19 +47,18 @@
       </div>
     </div>
   </div>
-  <div class="process" v-if="loading">
-    <div class="spinner-border" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
+  <Loading :loading="loading" />
 </template>
 
 <script>
-import Search from "../layouts/Search.vue";
+import Search from "../components/Search.vue";
+import Loading from "../components/Loading.vue";
 export default {
   components: {
     Search,
+    Loading,
   },
+  emits: [""],
   data() {
     return {
       types: {},
@@ -85,7 +69,6 @@ export default {
       next_page: "",
       current_page: "1",
       last_page: "",
-      ok: false,
       loading: true,
     };
   },
@@ -106,20 +89,8 @@ export default {
       });
     },
 
-    getProducer() {
-      axios
-        .get("/api/producers")
-        .then((response) => {
-          this.producers = response.data.data;
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    },
-
     getProduct() {
-      this.last_page = 1;
-      this.products = {};
+      this.last = 1;
       this.loading = true;
       axios
         .get("/api/products", { params: this.$route.query })
@@ -150,8 +121,21 @@ export default {
 
   mounted() {
     this.getType();
-    this.getProducer();
     this.getProduct();
   },
 };
 </script>
+
+<style>
+.process {
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(123, 118, 118, 0.7);
+}
+</style>

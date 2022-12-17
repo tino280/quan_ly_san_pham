@@ -5,31 +5,44 @@
     <div class="grid">
       <div class="grid__row">
         <div class="grid__column-2">
-          <Sidebar
-            :types="types"
-            :producers="producers"
-            :ok="$route.query.producer_id ? true : false"
-            :checkAdmin="false"
-          />
+          <Sidebar :types="types" :ok="ok" :checkAdmin="true" />
         </div>
         <div class="grid__column-10">
           <div class="main">
             <div class="top-block">
-              <div class="create"></div>
+              <div class="create">
+                <button
+                  type="button"
+                  class="my-btn my-btn-add"
+                  data-bs-toggle="modal"
+                  data-bs-target="#add-product"
+                  data-bs-keyboard="false"
+                >
+                  Thêm sản phẩm
+                </button>
+                <modal-create-product :types="types" @reload-list="getProduct" />
+              </div>
               <Search />
             </div>
 
             <div class="content">
               <div class="grid">
-                <div class="grid__row" style="padding: 12px; min-height: 530px">
-                  <list-view :products="products" :checkAdmin="false" />
+                <div class="grid__row" style="padding: 20px; min-height: 570px">
+                  <list-view
+                    :products="products"
+                    :checkAdmin="true"
+                    @reload-list="getProduct"
+                  />
 
                   <div v-if="products.length === 0">
                     <h1>Không có sản phẩm</h1>
-                    <a
-                      style="color: blue; font-size: 1.4rem; cursor: pointer"
-                      @click="$router.go(-1)"
-                      >Quay lại</a
+                    <a class="back" @click="$router.go(-1)">
+                      <img
+                        class="image-back"
+                        :src="`${host}/image/Left_Arrow_2.svg`"
+                        alt=""
+                      />
+                      Quay lại</a
                     >
                   </div>
 
@@ -48,19 +61,16 @@
       </div>
     </div>
   </div>
-  <div class="process" v-if="loading">
-    <div class="spinner-border" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
+  <Loading :loading="loading" />
 </template>
 
 <script>
-import Search from "../layouts/Search.vue";
-
+import Search from "../components/Search.vue";
+import Loading from "../components/Loading.vue";
 export default {
   components: {
     Search,
+    Loading,
   },
   data() {
     return {
@@ -72,13 +82,16 @@ export default {
       next_page: "",
       current_page: "1",
       last_page: "",
+      ok: false,
       loading: true,
+      host: window.location.origin,
     };
   },
 
   watch: {
     $route: {
       handler: function () {
+        this.loading = true;
         this.getProduct();
       },
       deep: true,
@@ -105,8 +118,6 @@ export default {
 
     getProduct() {
       this.last_page = 1;
-      window.scroll(0, 0);
-      this.loading = true;
       axios
         .get("/api/products", { params: this.$route.query })
         .then((response) => {
@@ -142,16 +153,16 @@ export default {
 };
 </script>
 
-<style>
-.process {
-  width: 100vw;
-  height: 100vh;
-  position: fixed;
-  top: 0;
-  left: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: rgba(123, 118, 118, 0.7);
+<style scoped>
+.back {
+  color: var(--blue-color);
+  font-size: 1.5rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.image-back {
+  width: 12px;
+  height: 12px;
 }
 </style>

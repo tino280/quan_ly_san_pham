@@ -1,11 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Auth from './Auth';
-import Home from './components/home/Home.vue';
-import Admin from './components/admin/Admin.vue';
-import Login from './components/login/Login.vue';
-import PageNotFound from './components/layouts/PageNotFound.vue';
-import ProductDetail from './components/detail/ProductDetail.vue';
-import ProductEdit from './components/edit/ProductEdit.vue';
+import Home from './layouts/home/Home.vue';
+import Admin from './layouts/admin/Admin.vue';
+import Login from './layouts/login/Login.vue';
+import PageNotFound from './layouts/components/PageNotFound.vue';
+import ProductDetail from './layouts/detail/ProductDetail.vue';
+import ProductEdit from './layouts/edit/ProductEdit.vue';
 import axios from 'axios';
 
 const routes = [
@@ -51,7 +51,10 @@ const routes = [
 
 const router = createRouter({
     history: createWebHistory(),
-    routes
+    routes,
+    scrollBehavior(to, from, savePosition) {
+        return savePosition || {top: 0};
+    }
 });
 
 router.beforeEach((to, from, next) => {
@@ -86,17 +89,5 @@ router.beforeEach((to, from, next) => {
         next();
     }
 });
-
-axios.interceptors.response.use(undefined, function (error) {
-    if (error) {
-        const originalRequest = error.config;
-        if (error.response.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;
-            Auth.logout();
-            return router.push({ name: 'login', query: { redirect: window.location.pathname }});
-        }
-    }
-    return Promise.reject(error);
-})
 
 export default router;

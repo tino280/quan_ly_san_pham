@@ -12,7 +12,7 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
         return Product::class;
     }
 
-    public function getAllProductBySearch($arr) 
+    public function getAllProductBySearch($arr)
     {
         $query = $this->model->newQuery();
 
@@ -34,18 +34,22 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
     }
 
     public function getRelativeProductsData(
-        $type_id, 
-        $producer_id, 
+        $type_id,
+        $producer_id,
         $id
     ) {
         $query = $this->model->newQuery();
-        
+
         $result = $query
+            ->where(function($query) use ($type_id, $producer_id){
+                $query
                     ->where('type_id', $type_id)
-                    ->whereNotIn('id', [$id])
-                    ->orderBy('price', 'ASC')
-                    ->limit(config('page.number_related_product'))
-                    ->get();
+                    ->where('producer_id', $producer_id);
+            })
+            ->whereNotIn('id', [$id])
+            ->orderBy('price', 'ASC')
+            ->limit(config('page.number_related_product'))
+            ->get();
         return $result;
     }
 }

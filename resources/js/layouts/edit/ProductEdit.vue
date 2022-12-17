@@ -5,12 +5,7 @@
     <div class="grid">
       <div class="grid__row">
         <div class="grid__column-2">
-          <Sidebar
-            :types="types"
-            :producers="producers"
-            :ok="false"
-            :checkAdmin="false"
-          />
+          <Sidebar :types="types" :ok="false" :checkAdmin="false" />
         </div>
 
         <div class="grid__column-10">
@@ -53,6 +48,7 @@
                             class="input-edit"
                             style="padding-left: 10px"
                             v-model="product.type_id"
+                            @change="handleChangeTypeId(product.type_id)"
                           >
                             <option v-for="type in types" :key="type.id" :value="type.id">
                               {{ type.name }}
@@ -71,8 +67,9 @@
                             style="padding-left: 10px"
                             v-model="product.producer_id"
                           >
+                            <option value="">Chọn hãng sản xuất</option>
                             <option
-                              v-for="producer in producers"
+                              v-for="producer in producerInput"
                               :key="producer.id"
                               :value="producer.id"
                             >
@@ -136,7 +133,7 @@
                           Ảnh minh họa<span style="color: red">*</span>
                         </div>
                         <img class="edit-image" :src="srcImage" />
-                        <p style="color: red">{{ error.image }}</p>
+                        <p style="color: red">{{ error.image }} {{ error.image_link }}</p>
                         <button
                           type="button"
                           class="my-btn btn-edit-image"
@@ -168,15 +165,12 @@
                                     v-if="addSlide[`slot${i}`]"
                                     type="button"
                                     class="add-slide"
-                                    @click="this.$refs.create[i - 1].click()"
+                                    @click="this.$refs.slide[i - 1].click()"
                                     :disabled="isDisabled"
                                   >
-                                    <img
-                                      src="http://nccdn-traning-php.test:8080/image/add-slide.svg"
-                                      alt=""
-                                    />
+                                    <img :src="`${host}/image/add-slide.svg`" alt="" />
                                   </button>
-                                  <div v-else style="height: 100%">
+                                  <div v-else style="height: 100%; position: relative">
                                     <img
                                       class="image-slide"
                                       :src="srcSlide[`slot${i}`]"
@@ -184,7 +178,7 @@
                                     <button
                                       type="button"
                                       class="my-btn btn-edit-slide"
-                                      @click="this.$refs.update[i - 1].click()"
+                                      @click="this.$refs.slide[i - 1].click()"
                                       :disabled="isDisabled"
                                     >
                                       Sửa
@@ -192,7 +186,7 @@
                                     <button
                                       type="button"
                                       class="my-btn btn-delete-slide"
-                                      @click="handleDeleteSlide(slideId[`slot${i}`], i)"
+                                      @click="handleDeleteSlide(i)"
                                       :disabled="isDisabled"
                                     >
                                       Xóa
@@ -220,30 +214,26 @@
     hidden
     v-for="i in 4"
     :key="i"
-    ref="create"
-    @change="handleCreateSlide(i)"
+    ref="slide"
+    @change="handleChangeSlide(i)"
   />
-
-  <input
-    type="file"
-    hidden
-    v-for="i in 4"
-    :key="i"
-    ref="update"
-    @change="handleUpdateSlide(i)"
-  />
+  <Loading :loading="loading" />
 </template>
 
 <script>
 import Auth from "../../Auth";
+import Loading from "../components/Loading.vue";
 export default {
+  components: {
+    Loading,
+  },
   data() {
     return {
       product: {
         id: "",
         name: "",
         type_id: "",
-        producer_id: "",
+        producer_id: " ",
         price: "",
         description: "",
         image_link: "",
@@ -257,7 +247,6 @@ export default {
         name: "",
       },
       slides: [],
-      slideImage: "",
       slideId: {
         slot1: "",
         slot2: "",
@@ -270,6 +259,7 @@ export default {
         producer_id: "",
         price: "",
         description: "",
+        image_link: "",
         image: "",
         slide1: "",
         slide2: "",
@@ -277,6 +267,7 @@ export default {
         slide4: "",
       },
       srcImage: "",
+      originImage: "",
       addSlide: {
         slot1: true,
         slot2: true,
@@ -290,13 +281,7 @@ export default {
         slot4: "",
       },
       isDisabled: false,
-      createSlide: {
-        slot1: "",
-        slot2: "",
-        slot3: "",
-        slot4: "",
-      },
-      updateSlide: {
+      inputSlide: {
         slot1: "",
         slot2: "",
         slot3: "",
@@ -308,32 +293,92 @@ export default {
         slot3: false,
         slot4: false,
       },
+      host: window.location.origin,
+      producerInput: {},
+      loading: false,
     };
   },
 
   watch: {
-    product: {
+    "product.name": {
       handler: function () {
         this.error.name = "";
+      },
+    },
+    "product.type_id": {
+      handler: function () {
+        this.error.type_id = "";
+      },
+    },
+    "product.producer_id": {
+      handler: function () {
+        this.error.producer_id = "";
+      },
+    },
+    "product.price": {
+      handler: function () {
         this.error.price = "";
+      },
+    },
+    "product.description": {
+      handler: function () {
         this.error.description = "";
       },
-      deep: true,
+    },
+    "product.image_link": {
+      handler: function () {
+        this.error.image_link = "";
+      },
+    },
+    "srcSlide.slot1": {
+      handler: function () {
+        this.error.slide1 = "";
+      },
+    },
+    "srcSlide.slot2": {
+      handler: function () {
+        this.error.slide2 = "";
+      },
+    },
+    "srcSlide.slot3": {
+      handler: function () {
+        this.error.slide3 = "";
+      },
+    },
+    "srcSlide.slot4": {
+      handler: function () {
+        this.error.slide4 = "";
+      },
     },
   },
 
   methods: {
     getProductById(id) {
+      this.loading = true;
       axios
         .get(`/api/products/detail/${id}`)
         .then((response) => {
           this.product = response.data.data;
-          this.srcImage = `http://nccdn-traning-php.test:8080/image/description/${this.product.id}/${this.product.image_link}`;
+          this.srcImage = `${this.host}/image/description/${this.product.id}/${this.product.image_link}`;
+          this.originImage = this.srcImage;
           this.product.image_link = "";
+          axios
+            .get(`/api/producers/types/${this.product.type_id}`)
+            .then((response) => {
+              this.loading = false;
+              this.producerInput = response.data.data;
+            })
+            .catch((error) => {
+              this.loading = false;
+              console.log(error);
+            });
         })
         .catch((error) => {
           console.log(error);
-          this.showAlert("Không có sản phẩm", "Delete_file.svg");
+          Swal.fire({
+            icon: "error",
+            title: error.response.data.message,
+          });
           this.$emit("reloadList");
           setTimeout(() => {
             this.$router.go(-1);
@@ -363,6 +408,17 @@ export default {
         });
     },
 
+    getProducerByTypeId(typeId) {
+      axios
+        .get(`/api/producers/types/${typeId}`)
+        .then((response) => {
+          this.producerInput = response.data.data;
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
+
     getSlideByProductId(product_id) {
       axios
         .get(`/api/slides/${product_id}`)
@@ -372,7 +428,7 @@ export default {
             this.addSlide[`slot${slide.slot}`] = false;
             this.srcSlide[
               `slot${slide.slot}`
-            ] = `http://nccdn-traning-php.test:8080/image/slide/${product_id}/${slide.image}`;
+            ] = `${this.host}/image/slide/${product_id}/${slide.image}`;
             this.slideId[`slot${slide.slot}`] = slide.id;
           });
         })
@@ -404,87 +460,8 @@ export default {
     handleUpdateProduct() {
       Auth.updateToken();
       this.isDisabled = true;
-      let isUpdateSuccess = true;
-      // create slide
-      for (let i = 1; i <= 4; i++) {
-        //create slide
-        if (this.createSlide[`slot${i}`]) {
-          const formData = new FormData();
-          formData.append("slot", i);
-          formData.append("image", this.slideImage);
-          formData.append("image", this.createSlide[`slot${i}`]);
-          formData.append("product_id", this.product.id);
-          const headers = { "Content-Type": "multipart/form-data" };
-          axios
-            .post("/api/slides/store", formData, { headers })
-            .then(() => {
-              this.addSlide[`slot${i}`] = false;
-              this.$refs.create[i - 1].value = null;
-            })
-            .catch((error) => {
-              console.error(error);
-              isUpdateSuccess = false;
-            });
-        }
-        //update slide
-        if (this.updateSlide[`slot${i}`]) {
-          const formData = new FormData();
-          formData.append("_method", "put");
-          formData.append("slot", i);
-          formData.append("image", this.updateSlide[`slot${i}`]);
-          formData.append("product_id", this.product.id);
-          const headers = { "Content-Type": "multipart/form-data" };
-          if (this.slideId[`slot${i}`]) {
-            let id = this.slideId[`slot${i}`];
-            axios
-              .post(`/api/slides/update/${id}`, formData, { headers })
-              .then((response) => {
-                this.addSlide[`slot${i}`] = false;
-                this.$refs.update[i - 1].value = null;
-              })
-              .catch((error) => {
-                console.log(error);
-                this.getSlideByProductId(this.$route.params.id);
-                this.showAlert("Không có ảnh slide", "Delete_file.svg");
-                isUpdateSuccess = false;
-              });
-          } else {
-            formData.delete("_method");
-            axios
-              .post("/api/slides/store", formData, { headers })
-              .then(() => {
-                this.addSlide[`slot${i}`] = false;
-                this.$refs.update[i - 1].value = null;
-              })
-              .catch((error) => {
-                console.error(error);
-                this.showAlert("Không có ảnh slide", "Delete_file.svg");
-                this.getSlideByProductId(this.$route.params.id);
-                isUpdateSuccess = false;
-              });
-          }
-        }
-
-        //delete slide
-        if (this.deleteSlide[`slot${i}`]) {
-          if (this.slideId[`slot${i}`]) {
-            let id = this.slideId[`slot${i}`];
-            axios
-              .delete(`/api/slides/delete/${id}`)
-              .then((response) => {
-                this.addSlide[`slot${i}`] = true;
-              })
-              .catch((error) => {
-                console.log(error);
-                isUpdateSuccess = false;
-                this.showAlert("Không có ảnh slide", "Delete_file.svg");
-                this.getSlideByProductId(this.$route.params.id);
-                this.deleteSlide[`slot${i}`] = false;
-              });
-          }
-        }
-      }
-      //update product
+      this.loading = true;
+      this.error = {};
       const formData = new FormData();
       formData.append("name", this.product.name);
       formData.append("type_id", this.product.type_id);
@@ -493,50 +470,85 @@ export default {
       formData.append("description", this.product.description);
       if (this.product.image_link) {
         formData.append("image_link", this.product.image_link);
+        this.product.image_link = "";
       }
-      formData.append("_method", "put");
+      for (let i = 1; i <= 4; i++) {
+        let slide;
+        if (this.$refs.slide[i - 1]["files"][0]) {
+          slide = this.$refs.slide[i - 1]["files"][0];
+          this.$refs.slide[i - 1].value = null;
+        } else {
+          slide = "";
+        }
+        formData.append(`slide${i}`, slide);
+
+        if (this.slideId[`slot${i}`]) {
+          if (this.deleteSlide[`slot${i}`]) {
+            formData.append(`deleteSlide${i}`, 1);
+          }
+        }
+      }
       const headers = { "Content-Type": "multipart/form-data" };
       axios
         .post(`/api/products/update/${this.product.id}`, formData, { headers })
         .then((response) => {
-          if (response.data.status === 200) {
-            this.$emit("reloadList");
-            this.$refs.image.value = null;
-          } else {
-            this.showAlert("Không có sản phẩm", "Delete_file.svg");
-            this.$emit("reloadList");
-            setTimeout(() => {
-              this.$router.go(-1);
-            }, 2000);
-          }
+          this.$emit("reloadList");
+          this.loading = false;
+          this.$refs.image.value = null;
+          Swal.fire({
+            width: 560,
+            html: `<h3>${response.data.message}</h3>`,
+            imageUrl: `${this.host}/image/present_1.png`,
+            imageWidth: 120,
+            imageHeight: 120,
+            showCloseButton: false,
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+          });
+          setTimeout(() => {
+            this.isDisabled = false;
+            window.location.href = `${this.host}/product/detail/` + this.product.id;
+          }, 2000);
         })
         .catch((error) => {
-          isUpdateSuccess = false;
-          const messageError = error.response.data.errors;
-          Object.entries(messageError).forEach((message) => {
-            this.error[message[0]] = message[1][0];
-          });
-        });
-      setTimeout(() => {
-        if (isUpdateSuccess) {
-          this.showAlert("Cập nhập thành công!", "present_1.png");
-          setTimeout(() => {
-            window.location.href =
-              "http://nccdn-traning-php.test:8080/product/detail/" + this.product.id;
-          }, 2000);
-        } else {
           this.isDisabled = false;
-        }
-      }, 500);
+          this.loading = false;
+          if (error.response.status === 400) {
+            if (error.response.data.status === 401) {
+              Swal.fire({
+                icon: "error",
+                title: error.response.data.message,
+              });
+              this.$emit("reloadList");
+              setTimeout(() => {
+                this.$router.go(-1);
+              }, 2000);
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: error.response.data.message,
+              });
+              this.getSlideByProductId(this.product.id);
+            }
+          } else if (error.response.status === 422) {
+            this.srcImage = this.originImage;
+            Swal.fire({
+              icon: "error",
+              title: "Cập nhập thất bại",
+            });
+            const messageError = error.response.data.errors;
+            Object.entries(messageError).forEach((message) => {
+              this.error[message[0]] = message[1][0];
+            });
+          }
+        });
     },
 
-    handleCreateSlide(i) {
-      this.updateSlide[`slot${i}`] = "";
-      this.$refs.update[i - 1].value = null;
-      this.error[`slide${i}`] = "";
+    handleChangeSlide(i) {
       const validImageTypes = ["image/gif", "image/jpeg", "image/png"];
-      const file = this.$refs.create[i - 1]["files"][0];
-      this.createSlide[`slot${i}`] = file;
+      this.deleteSlide[`slot${i}`] = false;
+      const file = this.$refs.slide[i - 1]["files"][0];
       const fileType = file["type"];
       if (!validImageTypes.includes(fileType)) {
         this.error[`slide${i}`] = "File vừa chọn không phải là ảnh";
@@ -551,45 +563,17 @@ export default {
       };
     },
 
-    handleUpdateSlide(i) {
-      this.createSlide[`slot${i}`] = "";
-      this.deleteSlide[`slot${i}`] = "";
-      this.$refs.create[i - 1].value = null;
-      const validImageTypes = ["image/gif", "image/jpeg", "image/png"];
-      const file = this.$refs.update[i - 1]["files"][0];
-      this.updateSlide[`slot${i}`] = file;
-      const fileType = file["type"];
-      if (!validImageTypes.includes(fileType)) {
-        this.error[`slide${i}`] = "File vừa chọn không phải là ảnh";
-        return;
-      }
-      const fileReader = new FileReader();
-      fileReader.readAsDataURL(file);
-      fileReader.onload = () => {
-        const url = fileReader.result;
-        this.srcSlide[`slot${i}`] = url;
-      };
-    },
-
-    handleDeleteSlide(id, i) {
+    handleDeleteSlide(i) {
       this.addSlide[`slot${i}`] = true;
       this.deleteSlide[`slot${i}`] = true;
-      this.createSlide[`slot${i}`] = "";
-      this.updateSlide[`slot${i}`] = "";
-      this.$refs.create[i - 1].value = null;
-      this.$refs.update[i - 1].value = null;
+      this.inputSlide[`slot${i}`] = "";
+      this.srcSlide[`slot${i}`] = "";
+      this.$refs.slide[i - 1].value = null;
     },
 
-    showAlert(message, image) {
-      Swal.fire({
-        width: 560,
-        html: `<h3>${message}</h3>`,
-        imageUrl: `http://nccdn-traning-php.test:8080/image/${image}`,
-        imageWidth: 120,
-        imageHeight: 120,
-        showCloseButton: true,
-        showConfirmButton: false,
-      });
+    handleChangeTypeId(typeId) {
+      this.product.producer_id = "";
+      this.getProducerByTypeId(typeId);
     },
   },
 
@@ -598,6 +582,13 @@ export default {
     this.getType();
     this.getProducer();
     this.getSlideByProductId(this.$route.params.id);
+    console.log(axios.defaults.headers);
   },
 };
 </script>
+
+<style scoped>
+p {
+  height: 15px;
+}
+</style>

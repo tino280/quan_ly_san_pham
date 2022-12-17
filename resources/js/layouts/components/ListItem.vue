@@ -1,6 +1,6 @@
 <template>
   <div class="grid__column-4">
-    <div class="product">
+    <div class="product" style="padding: 20px">
       <router-link
         :to="{
           path: `product/detail/${product.id}`,
@@ -8,14 +8,17 @@
       >
         <img
           class="mb-2 product-image"
-          :src="`http://nccdn-traning-php.test:8080/image/description/${product.id}/${product.image_link}`"
+          :src="`${host}/image/description/${product.id}/${product.image_link}`"
           alt=""
         />
       </router-link>
-      <p class="name" style="font-weight: bold; font-size: 1.4rem; margin: 10px 10px">
+      <p
+        class="name"
+        style="font-weight: bold; font-size: 1.4rem; margin: 10px 20px 10px 0"
+      >
         {{ product.name }}
       </p>
-      <p style="font-size: 1.4rem; margin: 10px 10px; color: #62677a">
+      <p style="font-size: 1.4rem; margin: 10px 20px 10px 0; color: #62677a">
         {{
           "$ " +
           parseInt(product.price).toLocaleString("en-US", {
@@ -48,10 +51,7 @@
             <div class="modal-content" style="border-radius: 16px">
               <div class="modal-delete">
                 <div style="margin-bottom: 30px">
-                  <img
-                    :src="`http://nccdn-traning-php.test:8080/image/delete_file.svg`"
-                    alt=""
-                  />
+                  <img :src="`${host}/image/delete_file.svg`" alt="" />
                 </div>
                 <div>
                   <p>
@@ -76,11 +76,11 @@
                     margin-top: 20px;
                   "
                 >
-                  <button class="my-btn my-btn-destroy-modal" data-bs-dismiss="modal">
+                  <button class="my-btn w my-btn-destroy-modal" data-bs-dismiss="modal">
                     Hủy
                   </button>
                   <button
-                    class="my-btn my-btn-delete-product"
+                    class="my-btn w my-btn-delete-product"
                     type="button"
                     @click="deleteProduct(product.id)"
                   >
@@ -94,29 +94,50 @@
       </div>
     </div>
   </div>
+  <Loading :loading="loading" />
 </template>
 
 <script>
 import Auth from "../../Auth";
+import Loading from "../components/Loading.vue";
 export default {
+  components: {
+    Loading,
+  },
+  emits: ["productChanged"],
   props: {
     product: {},
     checkAdmin: "",
   },
 
+  data() {
+    return {
+      host: window.location.origin,
+      loading: false,
+    };
+  },
+
   methods: {
     deleteProduct(id) {
-      Auth.updateToken();
+      this.loading = true;
       this.closeModal(id);
+      Auth.updateToken();
       axios
         .delete(`/api/products/delete/${id}`)
         .then((response) => {
           this.reloadListProduct();
+          this.loading = false;
           this.showAlert("Xóa sản phẩm thành công!", "Delete_file.svg");
         })
         .catch((error) => {
-          console.log(error);
-          this.showAlert("Không có sản phẩm!", "Delete_file.svg");
+          this.loading = false;
+          // console.log(error);
+          // this.showAlert("Không có sản phẩm!", "Delete_file.svg");
+          Swal.fire({
+            icon: "error",
+            title: "Xóa thất bại",
+            text: "Không có sản phẩm",
+          });
           this.reloadListProduct();
         });
     },
@@ -160,3 +181,22 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.my-btn {
+  width: 140px;
+  height: 40px;
+}
+
+.my-btn:hover {
+  color: white;
+}
+
+.w {
+  width: 90px;
+}
+
+.my-btn-destroy-modal:hover {
+  color: black;
+}
+</style>

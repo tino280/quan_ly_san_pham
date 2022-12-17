@@ -17,21 +17,31 @@ class ProducerSeeder extends Seeder
     {
         $data = [
             'name' => 'Ducati',
+            'type_id' => 2,
         ];
         Producer::create($data);
 
         $data = [
             'name' => 'Ferrari',
+            'type_id' => 1,
         ];
         Producer::create($data);
 
         $data = [
             'name' => 'Lamborghini',
+            'type_id' => 1,
         ];
         Producer::create($data);
 
         $data = [
             'name' => 'Audi',
+            'type_id' => 1,
+        ];
+        Producer::create($data);
+
+        $data = [
+            'name' => 'Giant',
+            'type_id' => 3,
         ];
         Producer::create($data);
     }

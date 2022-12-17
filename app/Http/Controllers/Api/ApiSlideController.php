@@ -21,20 +21,26 @@ class ApiSlideController extends Controller
 
     public function getSlideByProductId($product_id)
     {
-        $slides = $this->slideService->getSlideByProductId($product_id);
-        return response()->json([
-            "data" => $slides,
-        ], Response::HTTP_OK);
+        try {
+            $slides = $this->slideService->getSlideByProductId($product_id);
+            return response()->json([
+                "data" => $slides,
+            ], Response::HTTP_OK);
+        } catch(ModelNotFoundException $exception) {
+            return response()->json([
+                "message" => $exception->getMessage(),
+            ], Response::HTTP_BAD_REQUEST);
+        }
     }
 
-    public function store(StoreSlideRequest $request)
-    {
-        $arr = $request->validated();
-        $slide = $this->slideService->store($arr);
-        return response()->json([
-            "data" => $slide,
-        ], Response::HTTP_OK);
-    }
+    // public function store(StoreSlideRequest $request)
+    // {
+    //     $arr = $request->validated();
+    //     $slide = $this->slideService->store($arr);
+    //     return response()->json([
+    //         "data" => $slide,
+    //     ], Response::HTTP_OK);
+    // }
 
     public function update($id, UpdateSlideRequest $request)
     {

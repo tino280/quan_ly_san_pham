@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\MyException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SlideRequest;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Services\ProductService;
@@ -11,26 +13,26 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
-class ApiProductController extends Controller 
+class ApiProductController extends Controller
 {
 
     protected $productService;
     protected $slideService;
 
     public function __construct(
-        ProductService $productService, 
+        ProductService $productService,
         SlideService $slideService
     ) {
         $this->productService = $productService;
         $this->slideService = $slideService;
     }
 
-    public function getProductBySearch(Request $request) 
+    public function getProductBySearch(Request $request)
     {
         $arr = $request->all();
         try {
             $products = $this->productService->getAllBySearch($arr);
-        } catch(ModelNotFoundException $exception) {
+        } catch(MyException $exception) {
             return response()->json([
                 "message" => $exception->getMessage(),
             ], Response::HTTP_NOT_FOUND);
@@ -41,7 +43,7 @@ class ApiProductController extends Controller
         ], Response::HTTP_OK);
     }
 
-    public function getProductById($id) 
+    public function getProductById($id)
     {
         try {
             $product = $this->productService->getById($id);
@@ -73,7 +75,7 @@ class ApiProductController extends Controller
         ], Response::HTTP_OK);
     }
 
-    public function store(StoreProductRequest $request) 
+    public function store(StoreProductRequest $request)
     {
         $arr = $request->validated();
         $product = $this->productService->saveProductData($arr);
@@ -82,22 +84,31 @@ class ApiProductController extends Controller
         ], Response::HTTP_OK);
     }
 
-    public function update(UpdateProductRequest $request, $id) 
+    public function update(
+        UpdateProductRequest $updateProductRequest,
+                             $id
+    )
     {
-        $arr = $request->validated();
+        $arr_slide = $updateProductRequest
+            ->only("slide1", "slide2", "slide3", "slide4",
+                "deleteSlide1", "deleteSlide2", "deleteSlide3", "deleteSlide4");
+        $arrUpdateProduct = $updateProductRequest
+            ->only("name", "type_id", "producer_id", "price", "description", "image_link");
         try {
-            $this->productService->updateProduct($id, $arr);
+            $result = $this->productService->updateProduct($id, $arrUpdateProduct, $arr_slide);
+            return response()->json([
+                "message" => "Cập nhập thành công",
+                "data" => $result,
+            ], Response::HTTP_OK);
         } catch(ModelNotFoundException $exception) {
             return response()->json([
                 "message" => $exception->getMessage(),
-            ], Response::HTTP_NOT_FOUND);
+                "status" => $exception->getCode(),
+            ], Response::HTTP_BAD_REQUEST);
         }
-        return response()->json([
-            "message" => "Cập nhập thành công",
-        ], Response::HTTP_OK);
     }
 
-    public function delete($id) 
+    public function delete($id)
     {
         try {
             $this->productService->getById($id);

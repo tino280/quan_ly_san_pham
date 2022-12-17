@@ -24,12 +24,22 @@ class UpdateProductRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => ['required', 'string'],
+            'name' => ['required', 'string', 'max:50'],
             'type_id' => ['required', 'exists:types,id'],
             'producer_id' => ['required', 'exists:producers,id'],
             'price' => ['required', 'numeric', 'between: 10000, 100000000000'],
             'description' => ['required', 'string', 'max: 500'],
             'image_link' => ['file', 'image'],
+
+            'slide1' => [ 'nullable', 'image', ],
+            'slide2' => [ 'nullable', 'image', ],
+            'slide3' => [ 'nullable', 'image', ],
+            'slide4' => [ 'nullable', 'image', ],
+
+            'deleteSlide1' => ['boolean'],
+            'deleteSlide2' => ['boolean'],
+            'deleteSlide3' => ['boolean'],
+            'deleteSlide4' => ['boolean'],
         ];
     }
 
@@ -42,7 +52,7 @@ class UpdateProductRequest extends FormRequest
             'numeric' => ':attribute phải là số',
             'price' => ':attribute phải nằm trong khoảng từ 10000 đến 100000000000',
             'description' => ':attribute không quá 500 ký tự',
-            'image' => 'Đây không phải là :attribute',
+            'image' => 'File vừa chọn không phải là ảnh',
         ];
     }
 

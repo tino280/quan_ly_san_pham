@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ApiAuthController;
+use App\Http\Controllers\Api\ApiMailController;
 use App\Http\Controllers\Api\ApiProducerController;
 use App\Http\Controllers\Api\ApiProductController;
 use App\Http\Controllers\Api\ApiSlideController;
@@ -26,17 +27,20 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 Route::post('/login', [ApiAuthController::class, 'login']);
 Route::get('/types', [ApiTypeController::class, 'getAllType']);
 Route::get('/producers', [ApiProducerController::class, 'getAllProducer']);
+Route::get('/producers/types/{id}', [ApiProducerController::class, 'getProducersByTypeId']);
 Route::get('/products', [ApiProductController::class, 'getProductBySearch']);
 Route::get('/products/detail/{id}', [ApiProductController::class, 'getProductById']);
 Route::get('/products/relative/{id}', [ApiProductController::class, 'getRelativeProducts']);
 Route::get('/slides/{id}', [ApiSlideController::class, 'getSlideByProductId']);
 
-Route::middleware('auth:api')->group(function() {    
-    Route::get('/check_token', [ApiAuthController::class, 'checkToken']);  
+Route::get('/send_email', [ApiMailController::class, 'sendMail']);
+
+Route::middleware('auth:api')->group(function() {
+    Route::get('/check_token', [ApiAuthController::class, 'checkToken']);
     Route::get('/logout', [ApiAuthController::class, 'logout']);
     Route::post('/products/store', [ApiProductController::class, 'store']);
-    Route::put('/products/update/{id}', [ApiProductController::class, 'update']);
-    Route::delete('/products/delete/{id}', [ApiProductController::class, 'delete']);    
+    Route::post('/products/update/{id}', [ApiProductController::class, 'update']);
+    Route::delete('/products/delete/{id}', [ApiProductController::class, 'delete']);
     Route::post('/slides/store', [ApiSlideController::class, 'store']);
     Route::put('/slides/update/{id}', [ApiSlideController::class, 'update']);
     Route::delete('/slides/delete/{id}', [ApiSlideController::class, 'delete']);

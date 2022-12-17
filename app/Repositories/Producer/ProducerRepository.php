@@ -12,4 +12,9 @@ class ProducerRepository extends BaseRepository implements ProducerRepositoryInt
         return Producer::class;
     }
 
+    public function getProducersByTypeId($type_id)
+    {
+        $producers = $this->model->where('type_id', $type_id)->get();
+        return $producers;
+    }
 }

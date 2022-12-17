@@ -9,9 +9,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 
-class ApiAuthController extends Controller 
+class ApiAuthController extends Controller
 {
-    public function login(LoginRequest $request) 
+    public function login(LoginRequest $request)
     {
         $credentials = $request->only('email', 'password');
         if (!Auth::attempt($credentials)) {
@@ -22,7 +22,7 @@ class ApiAuthController extends Controller
         $user = $request->user();
         $tokenResult = $user->createToken('Personal Access Token');
         $token = $tokenResult->token;
-        if ($request->remember_me !== null) 
+        if ($request->remember_me !== null)
         {
             $token->expires_at = Carbon::now()->addWeeks(1);
         }
@@ -33,7 +33,7 @@ class ApiAuthController extends Controller
         ]);
     }
 
-    public function logout(Request $request) 
+    public function logout(Request $request)
     {
         $request->user()->token()->revoke();
         return response()->json([
@@ -41,7 +41,7 @@ class ApiAuthController extends Controller
         ]);
     }
 
-    public function checkToken() 
+    public function checkToken()
     {
         return response()->json([
             "authorized" => Auth::guard('api')->check(),

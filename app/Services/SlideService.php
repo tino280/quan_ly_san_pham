@@ -18,6 +18,9 @@ class SlideService
     public function getSlideByProductId($product_id)
     {
         $result = $this->slideRepo->getSlideByProductId($product_id);
+        if (!count($result)) {
+            throw new ModelNotFoundException("Không có slide");
+        }
         return $result;
     }
 
@@ -50,8 +53,9 @@ class SlideService
         $path = $arr["image"];
         $slide_name = $path->hashName();
         $arr["image"] = $slide_name;
-        $this->slideRepo->update($id, $arr);
+        $result = $this->slideRepo->update($id, $arr);
         $path->move(public_path("image/slide/$product_id"), $slide_name);
+        return $result;
     }
 
     public function deleteSlide($id)
@@ -66,9 +70,21 @@ class SlideService
         $this->slideRepo->delete($id);
     }
 
-    public function deleteSlideByProductId($product_id) 
+    public function deleteSlideByProductId($product_id)
     {
         File::deleteDirectory(public_path("image/slide/$product_id"));
         $this->slideRepo->deleteSlideByProductId($product_id);
+    }
+
+    public function createOrUpdate($slide_id = null, $arr) {
+        if ($slide_id = null) {
+            $this->store($arr);
+        } else {
+            $slide = $this->slideRepo->find($slide_id);
+            if (!$slide) {
+                throw new ModelNotFoundException("Không có slide");
+            }
+            $this->slideRepo->update($slide_id, $arr);
+        }
     }
 }

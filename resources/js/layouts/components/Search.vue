@@ -1,11 +1,10 @@
 <template>
-  <div class="search">
-    <img
-      class="search-img"
-      src="http://nccdn-traning-php.test:8080/image/search.png"
-      alt=""
-    />
-    <input class="search-input" type="text" v-model="q" @input="debounceSearch" />
+  <div style="flex: 1">
+    <div class="search">
+      <img class="search-img" :src="`${host}/image/search.png`" alt="" />
+      <input class="search-input" type="text" v-model="q" @input="debounceSearch" />
+    </div>
+    <p>{{ error }}</p>
   </div>
   <div class="process" v-if="loading">
     <div class="spinner-border" role="status">
@@ -18,10 +17,12 @@
 export default {
   data() {
     return {
-      timer: 1000,
+      timer: 2000,
       timeOut: null,
       q: "",
       loading: false,
+      host: window.location.origin,
+      error: "",
     };
   },
 
@@ -37,13 +38,19 @@ export default {
 
   methods: {
     debounceSearch(event) {
+      const regex = /[`!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/;
+      if (regex.test(event.target.value)) {
+        this.error = "Không được nhập ký tự các [`!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?~]";
+        return;
+      }
+      this.error = "";
       clearTimeout(this.timeOut);
-      this.loading = true;
       this.timeOut = setTimeout(() => {
-        this.loading = false;
         if (event.target.value) {
+          let query = Object.assign({}, this.$route.query);
+          delete query["page"];
           this.$router.push({
-            query: Object.assign({}, this.$route.query, { q: event.target.value }),
+            query: Object.assign({}, query, { q: event.target.value }),
           });
         } else {
           this.removeParam("q");
@@ -57,5 +64,16 @@ export default {
       this.$router.replace({ query });
     },
   },
+
+  mounted() {
+    this.q = this.$route.query.q;
+  },
 };
 </script>
+
+<style scoped>
+p {
+  height: 15px;
+  color: red;
+}
+</style>

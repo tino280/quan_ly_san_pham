@@ -7,12 +7,12 @@ use App\Repositories\BaseRepository;
 
 class SlideRepository extends BaseRepository implements SlideRepositoryInterface {
 
-    public function getModel() 
+    public function getModel()
     {
         return Slide::class;
     }
 
-    public function getSlideByProductId($product_id) 
+    public function getSlideByProductId($product_id)
     {
         $slides = $this->model
             ->where('product_id', $product_id)
@@ -21,7 +21,17 @@ class SlideRepository extends BaseRepository implements SlideRepositoryInterface
         return $slides;
     }
 
-    public function deleteSlideByProductId($product_id) 
+    public function getSlideByProductIdAndSlot($product_id, $slot)
+    {
+        $slide = $this->model
+            ->where('product_id', $product_id)
+            ->where('slot', $slot)
+            ->get()
+            ->first();
+        return $slide;
+    }
+
+    public function deleteSlideByProductId($product_id)
     {
         $this->model
             ->where('product_id', $product_id)

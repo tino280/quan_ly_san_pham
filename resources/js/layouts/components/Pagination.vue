@@ -1,5 +1,5 @@
 <template>
-  <div v-if="last_page != 1" class="pagination">
+  <div v-if="last_page > 1" class="pagination">
     <nav
       aria-label="Page navigation example"
       class="mx-auto pagination"

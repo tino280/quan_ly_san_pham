@@ -9,7 +9,7 @@ abstract class BaseRepository implements RepositoryInterface
     //model muốn tương tác
     protected $model;
 
-   //khởi tạo
+    //khởi tạo
     public function __construct()
     {
         $this->setModel();
@@ -30,7 +30,7 @@ abstract class BaseRepository implements RepositoryInterface
 
     public function getAll()
     {
-        return $this->model->all();
+        return $this->model->get();
     }
 
     public function find($id)
@@ -49,6 +49,8 @@ abstract class BaseRepository implements RepositoryInterface
     public function update($id, $attributes = [])
     {
         $this->model->where('id', $id)->update($attributes);
+        $result = $this->model->find($id);
+        return $result;
     }
 
     public function delete($id)
