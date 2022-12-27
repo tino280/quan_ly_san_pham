@@ -23,7 +23,6 @@ class Auth {
     updateToken () {
         this.token = localStorage.getItem('token');
         axios.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
-        console.log(axios.defaults.headers.common);
     }
 
     logout () {
@@ -32,7 +31,7 @@ class Auth {
         localStorage.removeItem('user');
         this.token = null;
         this.user = null;
-    }    
+    }
 }
 
 export default new Auth();

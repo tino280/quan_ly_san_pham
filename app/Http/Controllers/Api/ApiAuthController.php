@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -30,6 +31,19 @@ class ApiAuthController extends Controller
         return response()->json([
             'access_token' => $tokenResult->accessToken,
             'user' => auth::user()
+        ]);
+    }
+
+    public function loginGoogle(Request $request) {
+        $credentials = $request->all();
+        $user = User::where('email', $credentials['email'])->first();
+        if (! $user) {
+            $user = User::create($credentials);
+        }        
+        $token = $user->createToken('Personal Access Token');
+        return response()->json([
+            "token" => $token->accessToken,
+            "user" => $user,
         ]);
     }
 
