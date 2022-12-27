@@ -582,7 +582,6 @@ export default {
     this.getType();
     this.getProducer();
     this.getSlideByProductId(this.$route.params.id);
-    console.log(axios.defaults.headers);
   },
 };
 </script>

@@ -2,13 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Exceptions\MyException;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\SlideRequest;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Services\ProductService;
-use App\Services\SlideService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -17,14 +14,10 @@ class ApiProductController extends Controller
 {
 
     protected $productService;
-    protected $slideService;
 
-    public function __construct(
-        ProductService $productService,
-        SlideService $slideService
-    ) {
+    public function __construct(ProductService $productService) 
+    {
         $this->productService = $productService;
-        $this->slideService = $slideService;
     }
 
     public function getProductBySearch(Request $request)
@@ -32,7 +25,7 @@ class ApiProductController extends Controller
         $arr = $request->all();
         try {
             $products = $this->productService->getAllBySearch($arr);
-        } catch(MyException $exception) {
+        } catch(ModelNotFoundException $exception) {
             return response()->json([
                 "message" => $exception->getMessage(),
             ], Response::HTTP_NOT_FOUND);
@@ -54,6 +47,7 @@ class ApiProductController extends Controller
         }
         $product["type_name"] = $product->type->name;
         $product["producer_name"] = $product->producer->name;
+        $product["user"] = $product->user->name;
         return response()->json([
             "data" => $product,
         ], Response::HTTP_OK);
@@ -78,6 +72,8 @@ class ApiProductController extends Controller
     public function store(StoreProductRequest $request)
     {
         $arr = $request->validated();
+        $user = $request->user();
+        $arr['user_id'] = $user->id;
         $product = $this->productService->saveProductData($arr);
         return response()->json([
             "data" => $product,
@@ -86,7 +82,7 @@ class ApiProductController extends Controller
 
     public function update(
         UpdateProductRequest $updateProductRequest,
-                             $id
+        $id
     )
     {
         $arr_slide = $updateProductRequest
@@ -111,16 +107,14 @@ class ApiProductController extends Controller
     public function delete($id)
     {
         try {
-            $this->productService->getById($id);
+            $this->productService->delete($id);
+            return response()->json([
+                "message" => " Xóa thành công",
+            ], Response::HTTP_OK);
         } catch(ModelNotFoundException $exception) {
             return response()->json([
                 "message" => $exception->getMessage(),
             ], Response::HTTP_NOT_FOUND);
         }
-        $this->slideService->deleteSlideByProductId($id);
-        $this->productService->delete($id);
-        return response()->json([
-            "message" => " Xóa thành công",
-        ], Response::HTTP_OK);
     }
 }

@@ -21,7 +21,7 @@
                   query: { producer_id: $route.query.producer_id, q: $route.query.q },
                 }
           "
-          @change="getProducer('')"
+          @click="getProducer('')"
         >
           Tất cả
         </router-link>
@@ -45,7 +45,6 @@
                   path: '/admin',
                   query: {
                     type_id: type.id,
-                    producer_id: $route.query.producer_id,
                     q: $route.query.q,
                   },
                 }
@@ -53,7 +52,6 @@
                   path: '/',
                   query: {
                     type_id: type.id,
-                    producer_id: $route.query.producer_id,
                     q: $route.query.q,
                   },
                 }

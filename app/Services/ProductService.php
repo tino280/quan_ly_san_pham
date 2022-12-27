@@ -2,24 +2,29 @@
 
 namespace App\Services;
 
-use App\Exceptions\MyException;
 use App\Repositories\Product\ProductRepositoryInterface;
 use App\Repositories\Slide\SlideRepositoryInterface;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 
 class ProductService
 {
+    use AuthorizesRequests;
     protected $productRepo;
     protected $slideRepo;
 
+    protected $slideService;
+
     public function __construct(
         ProductRepositoryInterface $productRepo,
-        SlideRepositoryInterface $slideRepo
+        SlideRepositoryInterface $slideRepo,
+        SlideService $slideService,
     ) {
         $this->productRepo = $productRepo;
         $this->slideRepo = $slideRepo;
+        $this->slideService = $slideService;
     }
 
     public function getAll()
@@ -32,7 +37,7 @@ class ProductService
     {
         $products = $this->productRepo->getAllProductBySearch($arr);
         if (!$products->total() || $products->currentPage() > $products->lastPage()) {
-            throw new MyException('Không tìm thấy sản phẩm.');
+            throw new ModelNotFoundException('Không tìm thấy sản phẩm.');
         }
         $result = [
             'pagination' => [
@@ -64,8 +69,9 @@ class ProductService
         $arr_slide = []
     )
     {
-        $result = [];
         $product = $this->productRepo->find($product_id);
+        $this->authorize('update', $product);
+        $result = [];
         if (!$product) {
             throw new ModelNotFoundException('Sản phẩm không tồn tại', 401);
         }
@@ -120,10 +126,12 @@ class ProductService
     public function delete($id)
     {
         $product = $this->productRepo->find($id);
+        $this->authorize('delete', $product);
         if (!$product) {
             throw new ModelNotFoundException('Không có sản phẩm');
         }
         File::deleteDirectory(public_path("image/description/$id"));
+        $this->slideService->deleteSlideByProductId($id);
         $this->productRepo->delete($id);
     }
 

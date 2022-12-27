@@ -30,7 +30,7 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
             $producer_id = $arr['producer_id'];
             $query->where('producer_id', $producer_id);
         }
-        return $query->paginate(config('page.number_product'))->withQueryString();
+        return $query->with('user')->paginate(config('page.number_product'))->withQueryString();
     }
 
     public function getRelativeProductsData(

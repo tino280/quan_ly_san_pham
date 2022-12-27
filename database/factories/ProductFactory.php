@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Producer;
 use App\Models\Type;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -25,6 +26,7 @@ class ProductFactory extends Factory
             'producer_id' => Producer::inRandomOrder()->value('id'),
             'price' => $this->faker->numberBetween(10000, 1000000000),
             'description' => $this->faker->text(500),
+            'user_id' => User::inRandomOrder()->value('id'),
         ];
     }
 }

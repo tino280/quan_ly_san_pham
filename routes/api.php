@@ -25,6 +25,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 Route::post('/login', [ApiAuthController::class, 'login']);
+Route::post('/loginGoogle', [ApiAuthController::class, 'loginGoogle']);
 Route::get('/types', [ApiTypeController::class, 'getAllType']);
 Route::get('/producers', [ApiProducerController::class, 'getAllProducer']);
 Route::get('/producers/types/{id}', [ApiProducerController::class, 'getProducersByTypeId']);

@@ -40,6 +40,8 @@
 
 <script>
 import Auth from "../../Auth";
+import { googleLogout } from "vue3-google-login";
+import { googleSdkLoaded } from "vue3-google-login";
 
 export default {
   data() {
@@ -53,6 +55,10 @@ export default {
       this.$router.push({ name: "login" });
     },
     logout() {
+      googleSdkLoaded((google) => {
+        google.accounts.id.revoke(`${this.loggedUser.email}`);
+      });
+      googleLogout();
       axios
         .get("/api/logout")
         .then((response) => {

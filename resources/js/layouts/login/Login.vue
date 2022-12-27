@@ -1,7 +1,7 @@
 <template>
   <div class="login">
     <div class="logo-login">
-      <img src="http://nccdn-traning-php.test:8080/image/logo.png" class="logo-image" />
+      <img :src="`${host}/image/logo.png`" class="logo-image" />
     </div>
     <div class="form-login">
       <form class="form-body">
@@ -40,8 +40,16 @@
 
         <p>{{ errorAuth }}</p>
 
-        <div style="margin-top: 30px; display: flex; justify-content: center">
+        <div
+          style="
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+          "
+        >
           <button class="btn-login" type="button" @click="login">Đăng nhập</button>
+          <GoogleLogin style="margin-top: 20px" :callback="loginGoogle" />
         </div>
       </form>
     </div>
@@ -55,6 +63,8 @@
 
 <script lang="js">
 import Auth from '../../Auth';
+import { decodeCredential } from 'vue3-google-login';
+import axios from 'axios';
 
 export default {
   data() {
@@ -70,6 +80,7 @@ export default {
         password: "",
       },
       loading: false,
+      host: window.location.origin,
     }
   },
 
@@ -99,6 +110,22 @@ export default {
             this.errorAuth = "Email hoặc mật khẩu không đúng";
           }
         })
+    },
+
+    loginGoogle(response) {
+      const userData = decodeCredential(response.credential);
+      console.log(userData);
+      const user = {
+        email : userData.email,
+        name: userData.name,
+        password: "",
+      };
+      axios.post('/api/loginGoogle', user)
+      .then(response => {
+        Auth.login(response.data.token, response.data.user);
+        this.$router.push({name: "admin"});
+      })
+      .catch(error => {});
     },
 
     clearError() {

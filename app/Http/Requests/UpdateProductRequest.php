@@ -24,11 +24,11 @@ class UpdateProductRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => ['required', 'string', 'max:50'],
-            'type_id' => ['required', 'exists:types,id'],
-            'producer_id' => ['required', 'exists:producers,id'],
-            'price' => ['required', 'numeric', 'between: 10000, 100000000000'],
-            'description' => ['required', 'string', 'max: 500'],
+            'name' => ['nullable', 'string', 'max:50'],
+            'type_id' => ['nullable', 'exists:types,id'],
+            'producer_id' => ['nullable', 'exists:producers,id'],
+            'price' => ['nullable', 'numeric', 'between: 10000, 100000000000'],
+            'description' => ['nullable', 'string', 'max: 500'],
             'image_link' => ['file', 'image'],
 
             'slide1' => [ 'nullable', 'image', ],
@@ -36,10 +36,10 @@ class UpdateProductRequest extends FormRequest
             'slide3' => [ 'nullable', 'image', ],
             'slide4' => [ 'nullable', 'image', ],
 
-            'deleteSlide1' => ['boolean'],
-            'deleteSlide2' => ['boolean'],
-            'deleteSlide3' => ['boolean'],
-            'deleteSlide4' => ['boolean'],
+            'deleteSlide1' => ['nullable', 'boolean'],
+            'deleteSlide2' => ['nullable', 'boolean'],
+            'deleteSlide3' => ['nullable', 'boolean'],
+            'deleteSlide4' => ['nullable', 'boolean'],
         ];
     }
 

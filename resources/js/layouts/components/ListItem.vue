@@ -26,8 +26,14 @@
           })
         }}
       </p>
+      <p style="font-size: 1.4rem; margin: 10px 20px 10px 0; color: #62677a">
+        {{ product.user.name }}
+      </p>
       <div v-if="checkAdmin" class="btn-group">
-        <router-link class="my-btn my-btn-success" :to="`/product/edit/${product.id}`">
+        <router-link
+            class="my-btn my-btn-success"
+            :to="`/product/edit/${product.id}`"
+        >
           Cập nhập
         </router-link>
 
@@ -136,7 +142,7 @@ export default {
           Swal.fire({
             icon: "error",
             title: "Xóa thất bại",
-            text: "Không có sản phẩm",
+            text: error.response.data.message,
           });
           this.reloadListProduct();
         });

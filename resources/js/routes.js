@@ -7,6 +7,7 @@ import PageNotFound from './layouts/components/PageNotFound.vue';
 import ProductDetail from './layouts/detail/ProductDetail.vue';
 import ProductEdit from './layouts/edit/ProductEdit.vue';
 import axios from 'axios';
+import Swal from "sweetalert2";
 
 const routes = [
     {
@@ -40,6 +41,7 @@ const routes = [
         name: 'edit',
         meta: {
             requiresAuth: true,
+            requirePermission: true,
         }
     },
     {
@@ -66,13 +68,28 @@ router.beforeEach((to, from, next) => {
         } else {
             axios.get('/api/check_token')
                 .then((response) => {
-                    next();
+                    if (to.matched.some(record => record.meta.requirePermission)) {
+                        axios.post(`/api/products/update/${to.params.id}`)
+                            .then(response => {
+                                next();
+                            })
+                            .catch(error => {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: `${error.response.data.message}`
+                                });
+                                return;
+                            })
+                    } else {
+                        next();
+                    }
                 })
                 .catch(error => {
                     router.push({ name: 'login', query: { redirect: to.fullPath } });
                 });
         }
-    } else if (to.matched.some(record => record.meta.redirectIfAuthenticated)) {
+    }
+    else if (to.matched.some(record => record.meta.redirectIfAuthenticated)) {
         if (auth.token) {
             axios.get('/api/check_token')
                 .then((response) => {
