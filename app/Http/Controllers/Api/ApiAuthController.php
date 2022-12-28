@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Models\User;
@@ -9,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Laravel\Socialite\Facades\Socialite;
 
 class ApiAuthController extends Controller
 {
@@ -35,14 +37,22 @@ class ApiAuthController extends Controller
     }
 
     public function loginGoogle(Request $request) {
-        $credentials = $request->all();
-        $user = User::where('email', $credentials['email'])->first();
+        $token = $request->only("access_token");
+        $user_info = Socialite::driver('google')->userFromToken($token['access_token']);
+        $email = $user_info->email;
+        $name = $user_info->name;
+        $password = Helper::generateCryptedPassword();
+        $user = User::where('email', $email)->first();
         if (! $user) {
-            $user = User::create($credentials);
-        }        
+            $user = User::create([
+                'email' => $email,
+                'password' => $password,
+                'name' => $name,
+            ]);
+        }
         $token = $user->createToken('Personal Access Token');
         return response()->json([
-            "token" => $token->accessToken,
+            "access_token" => $token->accessToken,
             "user" => $user,
         ]);
     }
